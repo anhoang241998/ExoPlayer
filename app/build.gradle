@@ -42,12 +42,17 @@ dependencies {
     implementation 'com.google.android.exoplayer:exoplayer-dash:2.11.1'
     implementation 'com.google.android.exoplayer:exoplayer-ui:2.11.1'
 
-    implementation "com.github.bumptech.glide:glide:4.10.0"
-    annotationProcessor "com.github.bumptech.glide:compiler:4.10.0"
+    //glide
+    implementation ("com.github.bumptech.glide:glide:$glideVersion@aar"){
+        transitive = true
+    }
+    annotationProcessor "com.github.bumptech.glide:compiler:$glideVersion"
 
     //ButterKnife
     implementation 'com.jakewharton:butterknife:10.2.1'
     annotationProcessor 'com.jakewharton:butterknife-compiler:10.2.1'
 
+    implementation project(':previewseekbar')
+    implementation project(':previewseekbar-exoplayer')
 
 }

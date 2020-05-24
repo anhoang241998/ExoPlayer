@@ -2,12 +2,15 @@ package com.example.exoplayerfullstack;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.exoplayerfullstack.exoplayer.ExoPlayerManager;
+import com.github.rubensousa.previewseekbar.PreviewBar;
+import com.github.rubensousa.previewseekbar.exoplayer.PreviewTimeBar;
 import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
 
 import butterknife.BindView;
@@ -20,14 +23,38 @@ public class PlayerActivity extends AppCompatActivity {
     @BindView(R.id.progressBar)
     ProgressBar mProgressBarVideo;
     private ExoPlayerManager exoPlayerManager;
+    private PreviewTimeBar previewTimebar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
         ButterKnife.bind(this);
+        previewTimebar = playerView.findViewById(R.id.exo_progress);
 
-        exoPlayerManager = new ExoPlayerManager(playerView, mProgressBarVideo);
+        previewTimebar.addOnPreviewVisibilityListener((previewBar, isPreviewShowing) -> {
+            Log.d("PreviewShowing", String.valueOf(isPreviewShowing));
+        });
+
+        previewTimebar.addOnScrubListener(new PreviewBar.OnScrubListener() {
+            @Override
+            public void onScrubStart(PreviewBar previewBar) {
+                Log.d("Scrub", "START");
+            }
+
+            @Override
+            public void onScrubMove(PreviewBar previewBar, int progress, boolean fromUser) {
+                Log.d("Scrub", "MOVE to " + progress / 1000 + " FROM USER: " + fromUser);
+            }
+
+            @Override
+            public void onScrubStop(PreviewBar previewBar) {
+                Log.d("Scrub", "STOP");
+            }
+        });
+
+
+        exoPlayerManager = new ExoPlayerManager(playerView, previewTimebar, findViewById(R.id.imageView), getString(R.string.url_thumbnails), mProgressBarVideo);
         exoPlayerManager.play(Uri.parse(getString(R.string.media_url_mp4)));
 
         requestFullScreenIfLandscape();

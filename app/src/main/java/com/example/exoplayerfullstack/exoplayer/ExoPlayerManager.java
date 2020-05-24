@@ -1,49 +1,64 @@
 package com.example.exoplayerfullstack.exoplayer;
 
 import android.net.Uri;
-import android.net.wifi.p2p.WifiP2pManager;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 
-import com.example.exoplayerfullstack.PlayerActivity;
-import com.example.exoplayerfullstack.R;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.Target;
+import com.example.exoplayerfullstack.glide.GlideThumbnailTransformation;
+import com.github.rubensousa.previewseekbar.PreviewBar;
+import com.github.rubensousa.previewseekbar.PreviewLoader;
+import com.github.rubensousa.previewseekbar.exoplayer.PreviewTimeBar;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.exoplayer2.util.Util;
 
-public class ExoPlayerManager {
+public class ExoPlayerManager implements PreviewLoader, PreviewBar.OnScrubListener {
     private ExoPlayerMediaSourceBuilder mediaSourceBuilder;
     private PlayerView playerView;
     private SimpleExoPlayer player;
     private ProgressBar mProgressBar;
+    private PreviewTimeBar previewTimeBar;
+    private String thumbnailsUrl;
+    private ImageView imageView;
     private boolean resumeVideoOnPreviewStop;
+
 
     private Player.EventListener eventListener = new Player.EventListener() {
         @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-            if (playbackState == Player.STATE_READY && playWhenReady){
+            if (playbackState == Player.STATE_READY && playWhenReady) {
+                previewTimeBar.hidePreview();
                 mProgressBar.setVisibility(View.INVISIBLE);
-            }else if (playbackState == Player.STATE_BUFFERING){
+            } else if (playbackState == Player.STATE_BUFFERING) {
                 mProgressBar.setVisibility(View.VISIBLE);
-            }else{
+            } else {
                 mProgressBar.setVisibility(View.INVISIBLE);
             }
         }
     };
 
-    public ExoPlayerManager(PlayerView playerView, ProgressBar progressBar) {
+    public ExoPlayerManager(PlayerView playerView, PreviewTimeBar previewTimeBar, ImageView imageView,
+                            String thumbnailsUrl, ProgressBar progressBar) {
         this.playerView = playerView;
+        this.imageView = imageView;
         this.mProgressBar = progressBar;
+        this.previewTimeBar = previewTimeBar;
         this.mediaSourceBuilder = new ExoPlayerMediaSourceBuilder(playerView.getContext());
         this.resumeVideoOnPreviewStop = true;
+        this.thumbnailsUrl = thumbnailsUrl;
+        this.previewTimeBar.addOnScrubListener(this);
+        this.previewTimeBar.setPreviewLoader(this);
     }
 
-    public void  play(Uri uri){
+    public void play(Uri uri) {
         mediaSourceBuilder.setUri(uri);
     }
 
-    public void OnStart(){
+    public void OnStart() {
         if (Util.SDK_INT > 23) {
             createPlayers();
         }
@@ -93,5 +108,34 @@ public class ExoPlayerManager {
         player.prepare(mediaSourceBuilder.getMediaSource(false));
         player.addListener(eventListener);
         return player;
+    }
+
+    @Override
+    public void loadPreview(long currentPosition, long max) {
+        if (player.isPlaying()) {
+            player.setPlayWhenReady(false);
+        }
+        Glide.with(imageView)
+                .load(thumbnailsUrl)
+                .override(com.bumptech.glide.request.target.Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
+                .transform(new GlideThumbnailTransformation(currentPosition))
+                .into(imageView);
+    }
+
+    @Override
+    public void onScrubStart(PreviewBar previewBar) {
+        player.setPlayWhenReady(false);
+    }
+
+    @Override
+    public void onScrubMove(PreviewBar previewBar, int progress, boolean fromUser) {
+
+    }
+
+    @Override
+    public void onScrubStop(PreviewBar previewBar) {
+        if (resumeVideoOnPreviewStop) {
+            player.setPlayWhenReady(true);
+        }
     }
 }
