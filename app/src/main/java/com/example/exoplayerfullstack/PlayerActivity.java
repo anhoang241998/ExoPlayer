@@ -1,16 +1,13 @@
 package com.example.exoplayerfullstack;
 
-import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ProgressBar;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.exoplayerfullstack.exoplayer.ExoPlayerManager;
-import com.google.android.exoplayer2.ExoPlayerFactory;
-import com.google.android.exoplayer2.SimpleExoPlayer;
-import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
 
 import butterknife.BindView;
@@ -20,6 +17,8 @@ public class PlayerActivity extends AppCompatActivity {
 
     @BindView(R.id.player_view)
     SimpleExoPlayerView playerView;
+    @BindView(R.id.progressBar)
+    ProgressBar mProgressBarVideo;
     private ExoPlayerManager exoPlayerManager;
 
     @Override
@@ -28,8 +27,7 @@ public class PlayerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_player);
         ButterKnife.bind(this);
 
-        exoPlayerManager = new ExoPlayerManager(playerView);
-
+        exoPlayerManager = new ExoPlayerManager(playerView, mProgressBarVideo);
         exoPlayerManager.play(Uri.parse(getString(R.string.media_url_mp4)));
 
         requestFullScreenIfLandscape();

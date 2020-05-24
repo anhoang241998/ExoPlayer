@@ -1,7 +1,12 @@
 package com.example.exoplayerfullstack.exoplayer;
 
 import android.net.Uri;
+import android.net.wifi.p2p.WifiP2pManager;
+import android.view.View;
+import android.widget.ProgressBar;
 
+import com.example.exoplayerfullstack.PlayerActivity;
+import com.example.exoplayerfullstack.R;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.ui.PlayerView;
@@ -11,23 +16,25 @@ public class ExoPlayerManager {
     private ExoPlayerMediaSourceBuilder mediaSourceBuilder;
     private PlayerView playerView;
     private SimpleExoPlayer player;
+    private ProgressBar mProgressBar;
     private boolean resumeVideoOnPreviewStop;
 
     private Player.EventListener eventListener = new Player.EventListener() {
         @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
             if (playbackState == Player.STATE_READY && playWhenReady){
-
+                mProgressBar.setVisibility(View.INVISIBLE);
             }else if (playbackState == Player.STATE_BUFFERING){
-
+                mProgressBar.setVisibility(View.VISIBLE);
             }else{
-
+                mProgressBar.setVisibility(View.INVISIBLE);
             }
         }
     };
 
-    public ExoPlayerManager(PlayerView playerView) {
+    public ExoPlayerManager(PlayerView playerView, ProgressBar progressBar) {
         this.playerView = playerView;
+        this.mProgressBar = progressBar;
         this.mediaSourceBuilder = new ExoPlayerMediaSourceBuilder(playerView.getContext());
         this.resumeVideoOnPreviewStop = true;
     }
