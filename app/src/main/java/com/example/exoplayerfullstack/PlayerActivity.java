@@ -1,17 +1,11 @@
 package com.example.exoplayerfullstack;
 
-import android.annotation.SuppressLint;
-import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.GestureDetector;
-import android.view.GestureDetector.OnGestureListener;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
-import android.widget.ImageButton;
 import android.widget.ProgressBar;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,37 +13,42 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.exoplayerfullstack.exoplayer.ExoPlayerManager;
 import com.github.rubensousa.previewseekbar.PreviewBar;
 import com.github.rubensousa.previewseekbar.exoplayer.PreviewTimeBar;
+import com.github.vkay94.dtpv.DoubleTapPlayerView;
+import com.github.vkay94.dtpv.SeekListener;
+import com.github.vkay94.dtpv.youtube.YouTubeOverlay;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
-import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-public class PlayerActivity extends AppCompatActivity{
+public class PlayerActivity extends AppCompatActivity {
+
 
     @BindView(R.id.player_view)
-    SimpleExoPlayerView playerView;
+    DoubleTapPlayerView mPlayerView;
     @BindView(R.id.progressBar)
-    ProgressBar mProgressBarVideo;
+    ProgressBar mProgressBar;
     private ExoPlayerManager exoPlayerManager;
     private PreviewTimeBar previewTimebar;
     private ScaleGestureDetector mGestureDetector;
     private float mScaleVideo = 1f;
     private SimpleExoPlayer player;
-    private DisplayMetrics mDisplayMetrics;
-    private int mScreenWidth;
+    private YouTubeOverlay mYouTubeOverlay;
 
 
-    @SuppressLint("ClickableViewAccessibility")
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
         ButterKnife.bind(this);
-        previewTimebar = playerView.findViewById(R.id.exo_progress);
+
+        previewTimebar = mPlayerView.findViewById(R.id.exo_progress);
+        mYouTubeOverlay = mPlayerView.findViewById(R.id.youtubeDoubleTap);
+
 
         previewTimebar.addOnPreviewVisibilityListener((previewBar, isPreviewShowing) -> {
             Log.d("PreviewShowing", String.valueOf(isPreviewShowing));
@@ -73,18 +72,17 @@ public class PlayerActivity extends AppCompatActivity{
         });
 
 
-        exoPlayerManager = new ExoPlayerManager(playerView, previewTimebar, findViewById(R.id.imageView), getString(R.string.url_thumbnails), mProgressBarVideo);
+        exoPlayerManager = new ExoPlayerManager(mPlayerView, previewTimebar, findViewById(R.id.imageView), getString(R.string.url_thumbnails), mProgressBar);
         exoPlayerManager.play(Uri.parse(getString(R.string.media_url_mp4)));
+
+
 
         player = ExoPlayerFactory.newSimpleInstance(this);
         mGestureDetector = new ScaleGestureDetector(this, new scaleListener());
 
         requestFullScreenIfLandscape();
 
-        mDisplayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(mDisplayMetrics);
-        mScreenWidth = mDisplayMetrics.widthPixels;
-        Log.d("TAG1",  "width " + mScreenWidth );
+
 
     }
 
@@ -100,28 +98,34 @@ public class PlayerActivity extends AppCompatActivity{
     public void onStart() {
         super.onStart();
         exoPlayerManager.OnStart();
+        initializeDoubleTapPlayerView();
+        mYouTubeOverlay.setPlayerView(mPlayerView);
+        mYouTubeOverlay.setPlayer(player);
     }
 
     @Override
     public void onResume() {
         super.onResume();
         exoPlayerManager.onResume();
+        mYouTubeOverlay.setPlayer(player);
     }
 
     @Override
     public void onPause() {
         super.onPause();
         exoPlayerManager.onPause();
+        mYouTubeOverlay.setPlayer(player);
     }
 
     @Override
     public void onStop() {
         super.onStop();
         exoPlayerManager.onStop();
+        mYouTubeOverlay.setPlayer(player);
     }
 
     private void requestFullScreenIfLandscape() {
-        playerView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
+        mPlayerView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
@@ -130,16 +134,15 @@ public class PlayerActivity extends AppCompatActivity{
     }
 
 
-
     private class scaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
             mScaleVideo = mScaleVideo * detector.getScaleFactor();
             if (mScaleVideo > 1f) {
-                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
+                mPlayerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
                 player.setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING);
             } else
-                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
+                mPlayerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
             return true;
         }
     }
@@ -148,6 +151,48 @@ public class PlayerActivity extends AppCompatActivity{
     public boolean onTouchEvent(MotionEvent event) {
         mGestureDetector.onTouchEvent(event);
         return true;
+    }
+
+    public void initializeDoubleTapPlayerView() {
+        mYouTubeOverlay.setPlayerView(mPlayerView);
+        mYouTubeOverlay.setAnimationDuration(800);
+        mYouTubeOverlay.setFastForwardRewindDuration(10000);
+        mYouTubeOverlay.setSeekListener(new SeekListener() {
+            @Override
+            public void onVideoStartReached() {
+                pausePlayer();
+                Log.d("VideoStart", "onVideoStartReached: " + "Video start reached");
+            }
+
+            @Override
+            public void onVideoEndReached() {
+                Log.d("VideoStop", "onVideoEndReached: " + "Video end reached");
+            }
+        });
+        mYouTubeOverlay.setPerformListener(new YouTubeOverlay.PerformListener() {
+            @Override
+            public void onAnimationStart() {
+                mPlayerView.setUseController(false);
+                mYouTubeOverlay.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAnimationEnd() {
+                mPlayerView.setUseController(true);
+                mYouTubeOverlay.setVisibility(View.GONE);
+                if (!player.getPlayWhenReady())
+                    mPlayerView.showController();
+            }
+        });
+
+        mPlayerView.activateDoubleTap(true).setDoubleTapDelay(650).setDoubleTapListener(mYouTubeOverlay);
+    }
+
+    private void pausePlayer() {
+        if (player != null) {
+            player.setPlayWhenReady(false);
+            player.getPlaybackState();
+        }
     }
 }
 

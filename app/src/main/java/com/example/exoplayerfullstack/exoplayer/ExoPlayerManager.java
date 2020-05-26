@@ -1,6 +1,7 @@
 package com.example.exoplayerfullstack.exoplayer;
 
 import android.net.Uri;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -11,14 +12,16 @@ import com.example.exoplayerfullstack.glide.GlideThumbnailTransformation;
 import com.github.rubensousa.previewseekbar.PreviewBar;
 import com.github.rubensousa.previewseekbar.PreviewLoader;
 import com.github.rubensousa.previewseekbar.exoplayer.PreviewTimeBar;
+import com.github.vkay94.dtpv.DoubleTapPlayerView;
+import com.github.vkay94.dtpv.SeekListener;
+import com.github.vkay94.dtpv.youtube.YouTubeOverlay;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
-import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.exoplayer2.util.Util;
 
 public class ExoPlayerManager implements PreviewLoader, PreviewBar.OnScrubListener {
     private ExoPlayerMediaSourceBuilder mediaSourceBuilder;
-    private PlayerView playerView;
+    private DoubleTapPlayerView playerView;
     private SimpleExoPlayer player;
     private ProgressBar mProgressBar;
     private PreviewTimeBar previewTimeBar;
@@ -42,7 +45,7 @@ public class ExoPlayerManager implements PreviewLoader, PreviewBar.OnScrubListen
         }
     };
 
-    public ExoPlayerManager(PlayerView playerView, PreviewTimeBar previewTimeBar, ImageView imageView,
+    public ExoPlayerManager(DoubleTapPlayerView playerView, PreviewTimeBar previewTimeBar, ImageView imageView,
                             String thumbnailsUrl, ProgressBar progressBar) {
         this.playerView = playerView;
         this.imageView = imageView;
@@ -53,6 +56,7 @@ public class ExoPlayerManager implements PreviewLoader, PreviewBar.OnScrubListen
         this.thumbnailsUrl = thumbnailsUrl;
         this.previewTimeBar.addOnScrubListener(this);
         this.previewTimeBar.setPreviewLoader(this);
+
     }
 
     public void play(Uri uri) {
@@ -97,18 +101,22 @@ public class ExoPlayerManager implements PreviewLoader, PreviewBar.OnScrubListen
     private void createPlayers() {
         if (player != null) {
             player.release();
+        }else {
+            player = createPlayer();
+            playerView.setPlayer(player);
+
         }
-        player = createPlayer();
-        playerView.setPlayer(player);
     }
 
     private SimpleExoPlayer createPlayer() {
-        SimpleExoPlayer player = new SimpleExoPlayer.Builder(playerView.getContext()).build();
-        player.setPlayWhenReady(true);
-        player.prepare(mediaSourceBuilder.getMediaSource(false));
-        player.addListener(eventListener);
+            SimpleExoPlayer player = new SimpleExoPlayer.Builder(playerView.getContext()).build();
+            player.setPlayWhenReady(true);
+            player.prepare(mediaSourceBuilder.getMediaSource(false));
+            player.addListener(eventListener);
         return player;
     }
+
+
 
     @Override
     public void loadPreview(long currentPosition, long max) {

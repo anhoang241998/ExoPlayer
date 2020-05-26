@@ -3,9 +3,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:background="#000">
 
-    <com.google.android.exoplayer2.ui.SimpleExoPlayerView
+    <com.github.vkay94.dtpv.DoubleTapPlayerView
         android:id="@+id/player_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -15,6 +16,14 @@
         app:show_timeout="5000"
         app:surface_type="texture_view" />
 
+    <com.github.vkay94.dtpv.youtube.YouTubeOverlay
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/youtubeDoubleTap"
+        android:visibility="gone"
+        android:background="@color/dtp_overlay_dim"
+        app:yt_playerView="@id/player_view"
+        tools:visibility="visible"/>
 
     <ProgressBar
         android:id="@+id/progressBar"
