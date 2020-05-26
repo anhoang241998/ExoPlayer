@@ -3,10 +3,42 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:layout_gravity="bottom"
     android:layoutDirection="ltr"
     android:orientation="vertical">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageButton
+            android:id="@id/exo_play"
+            style="@style/ExoMediaButton.Play"
+            android:layout_gravity="center" />
+
+        <ImageButton
+            android:id="@id/exo_pause"
+            style="@style/ExoMediaButton.Pause"
+            android:layout_gravity="center" />
+
+        <ImageButton
+            android:id="@id/exo_rew"
+            style="@style/ExoMediaButton.Previous"
+            android:layout_gravity="center"
+            android:layout_marginEnd="70dp"
+            android:scaleType="center"
+            android:src="@drawable/ic_replay" />
+
+        <ImageButton
+            android:id="@id/exo_ffwd"
+            style="@style/ExoMediaButton.Next"
+            android:layout_gravity="center"
+            android:layout_marginStart="70dp"
+            android:scaleType="center"
+            android:src="@drawable/ic_forward" />
+    </FrameLayout>
+
 
     <LinearLayout
         android:id="@+id/controlsLayout"
@@ -17,29 +49,20 @@
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <ImageButton
-            android:id="@id/exo_prev"
-            style="@style/ExoMediaButton.Previous" />
 
         <ImageButton
-            android:id="@id/exo_rew"
-            style="@style/ExoMediaButton.Rewind" />
+            style="@style/ExoMediaButton.Next"
+            android:scaleType="center"
+            android:src="@drawable/ic_settings" />
 
-        <ImageButton
-            android:id="@id/exo_play"
-            style="@style/ExoMediaButton.Play" />
-
-        <ImageButton
-            android:id="@id/exo_pause"
-            style="@style/ExoMediaButton.Pause" />
-
-        <ImageButton
-            android:id="@id/exo_ffwd"
-            style="@style/ExoMediaButton.FastForward" />
-
-        <ImageButton
-            android:id="@id/exo_next"
-            style="@style/ExoMediaButton.Next" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Quality"
+            android:textAllCaps="true"
+            android:textColor="#FFBEBEBE"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
     </LinearLayout>
 
@@ -50,7 +73,7 @@
         android:layout_margin="8dp"
         android:includeFontPadding="false"
         android:textColor="#FFBEBEBE"
-        android:textSize="12sp"
+        android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@id/controlsLayout"
         app:layout_constraintStart_toStartOf="parent"
@@ -62,12 +85,15 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
+        app:buffered_color="#88ffffff"
         app:layout_constraintBottom_toBottomOf="@id/exo_position"
         app:layout_constraintEnd_toStartOf="@id/exo_duration"
         app:layout_constraintStart_toEndOf="@+id/exo_position"
         app:layout_constraintTop_toTopOf="@+id/exo_position"
+        app:played_color="#f20"
         app:previewAnimationEnabled="true"
         app:previewFrameLayout="@id/previewFrameLayout"
+        app:scrubber_color="#f20"
         app:scrubber_dragged_size="24dp"
         app:scrubber_enabled_size="16dp" />
 
@@ -79,7 +105,7 @@
         android:layout_margin="8dp"
         android:includeFontPadding="false"
         android:textColor="#FFBEBEBE"
-        android:textSize="12sp"
+        android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintBaseline_toBaselineOf="@id/exo_position"
         app:layout_constraintEnd_toEndOf="parent"

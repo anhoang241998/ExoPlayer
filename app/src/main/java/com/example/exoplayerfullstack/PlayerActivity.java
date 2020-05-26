@@ -1,9 +1,17 @@
 package com.example.exoplayerfullstack;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.GestureDetector.OnGestureListener;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,12 +19,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.exoplayerfullstack.exoplayer.ExoPlayerManager;
 import com.github.rubensousa.previewseekbar.PreviewBar;
 import com.github.rubensousa.previewseekbar.exoplayer.PreviewTimeBar;
+import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-public class PlayerActivity extends AppCompatActivity {
+public class PlayerActivity extends AppCompatActivity{
 
     @BindView(R.id.player_view)
     SimpleExoPlayerView playerView;
@@ -24,7 +36,14 @@ public class PlayerActivity extends AppCompatActivity {
     ProgressBar mProgressBarVideo;
     private ExoPlayerManager exoPlayerManager;
     private PreviewTimeBar previewTimebar;
+    private ScaleGestureDetector mGestureDetector;
+    private float mScaleVideo = 1f;
+    private SimpleExoPlayer player;
+    private DisplayMetrics mDisplayMetrics;
+    private int mScreenWidth;
 
+
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,7 +76,15 @@ public class PlayerActivity extends AppCompatActivity {
         exoPlayerManager = new ExoPlayerManager(playerView, previewTimebar, findViewById(R.id.imageView), getString(R.string.url_thumbnails), mProgressBarVideo);
         exoPlayerManager.play(Uri.parse(getString(R.string.media_url_mp4)));
 
+        player = ExoPlayerFactory.newSimpleInstance(this);
+        mGestureDetector = new ScaleGestureDetector(this, new scaleListener());
+
         requestFullScreenIfLandscape();
+
+        mDisplayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(mDisplayMetrics);
+        mScreenWidth = mDisplayMetrics.widthPixels;
+        Log.d("TAG1",  "width " + mScreenWidth );
 
     }
 
@@ -101,5 +128,27 @@ public class PlayerActivity extends AppCompatActivity {
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
     }
+
+
+
+    private class scaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+        @Override
+        public boolean onScale(ScaleGestureDetector detector) {
+            mScaleVideo = mScaleVideo * detector.getScaleFactor();
+            if (mScaleVideo > 1f) {
+                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
+                player.setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING);
+            } else
+                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
+            return true;
+        }
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        mGestureDetector.onTouchEvent(event);
+        return true;
+    }
 }
+
 

@@ -27,6 +27,7 @@ public class ExoPlayerManager implements PreviewLoader, PreviewBar.OnScrubListen
     private boolean resumeVideoOnPreviewStop;
 
 
+
     private Player.EventListener eventListener = new Player.EventListener() {
         @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
@@ -99,7 +100,6 @@ public class ExoPlayerManager implements PreviewLoader, PreviewBar.OnScrubListen
         }
         player = createPlayer();
         playerView.setPlayer(player);
-        playerView.setControllerShowTimeoutMs(15000);
     }
 
     private SimpleExoPlayer createPlayer() {
@@ -138,4 +138,10 @@ public class ExoPlayerManager implements PreviewLoader, PreviewBar.OnScrubListen
             player.setPlayWhenReady(true);
         }
     }
+
+
 }
+
+
+
+

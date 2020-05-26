@@ -1,2 +1,2 @@
 rootProject.name='ExoPlayerFullStack'
-include ':app', ':previewseekbar', ':previewseekbar-exoplayer'
+include ':app', ':previewseekbar', ':previewseekbar-exoplayer', ':doubletapplayer'
