@@ -1,8 +1,9 @@
 package com.example.exoplayerfullstack.exoplayer;
 
+import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 
@@ -20,6 +21,7 @@ import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.util.Util;
 
 public class ExoPlayerManager implements PreviewLoader, PreviewBar.OnScrubListener {
+    private static Context sContext;
     private ExoPlayerMediaSourceBuilder mediaSourceBuilder;
     private DoubleTapPlayerView playerView;
     private SimpleExoPlayer player;
@@ -27,9 +29,14 @@ public class ExoPlayerManager implements PreviewLoader, PreviewBar.OnScrubListen
     private PreviewTimeBar previewTimeBar;
     private String thumbnailsUrl;
     private ImageView imageView;
+    private YouTubeOverlay mYouTubeOverlay;
     private boolean resumeVideoOnPreviewStop;
+    private FrameLayout viewGroupPlayPause;
 
 
+    public SimpleExoPlayer getPlayer() {
+        return player;
+    }
 
     private Player.EventListener eventListener = new Player.EventListener() {
         @Override
@@ -37,16 +44,19 @@ public class ExoPlayerManager implements PreviewLoader, PreviewBar.OnScrubListen
             if (playbackState == Player.STATE_READY && playWhenReady) {
                 previewTimeBar.hidePreview();
                 mProgressBar.setVisibility(View.INVISIBLE);
+                viewGroupPlayPause.setVisibility(View.VISIBLE);
             } else if (playbackState == Player.STATE_BUFFERING) {
                 mProgressBar.setVisibility(View.VISIBLE);
+                viewGroupPlayPause.setVisibility(View.INVISIBLE);
             } else {
                 mProgressBar.setVisibility(View.INVISIBLE);
+                viewGroupPlayPause.setVisibility(View.VISIBLE);
             }
         }
     };
 
     public ExoPlayerManager(DoubleTapPlayerView playerView, PreviewTimeBar previewTimeBar, ImageView imageView,
-                            String thumbnailsUrl, ProgressBar progressBar) {
+                            String thumbnailsUrl, ProgressBar progressBar, YouTubeOverlay youTubeOverlay, FrameLayout viewGroupPlayPause) {
         this.playerView = playerView;
         this.imageView = imageView;
         this.mProgressBar = progressBar;
@@ -56,6 +66,8 @@ public class ExoPlayerManager implements PreviewLoader, PreviewBar.OnScrubListen
         this.thumbnailsUrl = thumbnailsUrl;
         this.previewTimeBar.addOnScrubListener(this);
         this.previewTimeBar.setPreviewLoader(this);
+        this.mYouTubeOverlay = youTubeOverlay;
+        this.viewGroupPlayPause = viewGroupPlayPause;
 
     }
 
@@ -125,7 +137,7 @@ public class ExoPlayerManager implements PreviewLoader, PreviewBar.OnScrubListen
         }
         Glide.with(imageView)
                 .load(thumbnailsUrl)
-                .override(com.bumptech.glide.request.target.Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
+                .override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
                 .transform(new GlideThumbnailTransformation(currentPosition))
                 .into(imageView);
     }
@@ -144,6 +156,46 @@ public class ExoPlayerManager implements PreviewLoader, PreviewBar.OnScrubListen
     public void onScrubStop(PreviewBar previewBar) {
         if (resumeVideoOnPreviewStop) {
             player.setPlayWhenReady(true);
+        }
+    }
+
+    public void initializeDoubleTapPlayerView() {
+        mYouTubeOverlay.setPlayerView(playerView);
+        mYouTubeOverlay.setAnimationDuration(800);
+        mYouTubeOverlay.setFastForwardRewindDuration(10000);
+        mYouTubeOverlay.setSeekListener(new SeekListener() {
+            @Override
+            public void onVideoStartReached() {
+                pausePlayer();
+            }
+
+            @Override
+            public void onVideoEndReached() {
+            }
+        });
+        mYouTubeOverlay.setPerformListener(new YouTubeOverlay.PerformListener() {
+            @Override
+            public void onAnimationStart() {
+                playerView.setUseController(false);
+                mYouTubeOverlay.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAnimationEnd() {
+                playerView.setUseController(true);
+                mYouTubeOverlay.setVisibility(View.GONE);
+                if (!player.getPlayWhenReady())
+                    playerView.showController();
+            }
+        });
+
+        playerView.activateDoubleTap(true).setDoubleTapDelay(650).setDoubleTapListener(mYouTubeOverlay);
+    }
+
+    private void pausePlayer() {
+        if (player != null) {
+            player.setPlayWhenReady(false);
+            player.getPlaybackState();
         }
     }
 

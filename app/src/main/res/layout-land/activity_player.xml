@@ -11,6 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:controller_layout_id="@layout/exoplayer_controls"
+        android:animateLayoutChanges="true"
         app:fastforward_increment="10000"
         app:rewind_increment="10000"
         app:show_timeout="5000"
@@ -31,6 +32,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:indeterminate="true" />
+
+
 
 
 </FrameLayout>

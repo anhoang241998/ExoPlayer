@@ -6,6 +6,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 
 import androidx.core.view.GestureDetectorCompat;
 
@@ -22,7 +23,10 @@ public final class DoubleTapPlayerView extends PlayerView {
 
     private boolean doubleTapActivated = true;
 
+
     private GestureDetectorCompat mDetector;
+    private ScaleGestureDetector mGestureDetector;
+
 
     PlayerDoubleTapListener controls;
 
@@ -113,6 +117,7 @@ public final class DoubleTapPlayerView extends PlayerView {
         if (doubleTapActivated) {
             mDetector.onTouchEvent(ev);
 
+
             // Do not trigger original behavior when double tapping
             // otherwise the controller would show/hide - it would flack
             return true;
@@ -185,4 +190,7 @@ public final class DoubleTapPlayerView extends PlayerView {
             return super.onDoubleTapEvent(e);
         }
     }
+
+
+
 }

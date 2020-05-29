@@ -1,14 +1,21 @@
 package com.example.exoplayerfullstack;
 
+import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.example.exoplayerfullstack.exoplayer.ExoPlayerManager;
 import com.github.rubensousa.previewseekbar.PreviewBar;
@@ -19,7 +26,9 @@ import com.github.vkay94.dtpv.youtube.YouTubeOverlay;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
+import com.google.android.exoplayer2.ui.PlayerControlView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -31,13 +40,17 @@ public class PlayerActivity extends AppCompatActivity {
     DoubleTapPlayerView mPlayerView;
     @BindView(R.id.progressBar)
     ProgressBar mProgressBar;
+    @BindView(R.id.youtubeDoubleTap)
+    YouTubeOverlay mYouTubeOverlay;
+
     private ExoPlayerManager exoPlayerManager;
     private PreviewTimeBar previewTimebar;
-    private ScaleGestureDetector mGestureDetector;
-    private float mScaleVideo = 1f;
-    private SimpleExoPlayer player;
-    private YouTubeOverlay mYouTubeOverlay;
-
+    private Button mBtnFullScreen, mBtnLockScreen;
+    private ImageButton mBtnUnlockScreen;
+    private RelativeLayout mUnlockRelative;
+    private ConstraintLayout mViewController;
+    private FrameLayout mViewGroupPlayPause;
+    private boolean flag = false;
 
 
     @Override
@@ -47,7 +60,14 @@ public class PlayerActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         previewTimebar = mPlayerView.findViewById(R.id.exo_progress);
-        mYouTubeOverlay = mPlayerView.findViewById(R.id.youtubeDoubleTap);
+
+        mBtnFullScreen = mPlayerView.findViewById(R.id.btn_fullScreen);
+
+        mBtnLockScreen = mPlayerView.findViewById(R.id.btn_lock_screen);
+        mBtnUnlockScreen = mPlayerView.findViewById(R.id.btn_unlock);
+        mUnlockRelative = mPlayerView.findViewById(R.id.viewGroup_unlock_screen);
+        mViewController = mPlayerView.findViewById(R.id.viewGroup_controller);
+        mViewGroupPlayPause = mPlayerView.findViewById(R.id.viewGroup_play_pause);
 
 
         previewTimebar.addOnPreviewVisibilityListener((previewBar, isPreviewShowing) -> {
@@ -72,17 +92,35 @@ public class PlayerActivity extends AppCompatActivity {
         });
 
 
-        exoPlayerManager = new ExoPlayerManager(mPlayerView, previewTimebar, findViewById(R.id.imageView), getString(R.string.url_thumbnails), mProgressBar);
+        exoPlayerManager = new ExoPlayerManager(mPlayerView, previewTimebar, findViewById(R.id.imageView), getString(R.string.url_thumbnails), mProgressBar, mYouTubeOverlay, mViewGroupPlayPause);
         exoPlayerManager.play(Uri.parse(getString(R.string.media_url_mp4)));
 
-
-
-        player = ExoPlayerFactory.newSimpleInstance(this);
-        mGestureDetector = new ScaleGestureDetector(this, new scaleListener());
-
+        exoPlayerManager.initializeDoubleTapPlayerView();
         requestFullScreenIfLandscape();
 
+        mBtnFullScreen.setOnClickListener(v -> {
+            if (flag) {
+                mBtnFullScreen.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_fullscreen, 0, 0, 0);
+                mPlayerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
+                flag = false;
+            } else {
+                mBtnFullScreen.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_fullscreen_exit, 0, 0, 0);
+                mPlayerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
+                flag = true;
+            }
+        });
 
+        mBtnLockScreen.setOnClickListener(v -> {
+           mViewController.setVisibility(View.GONE);
+           mUnlockRelative.setVisibility(View.VISIBLE);
+           setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        });
+
+       mBtnUnlockScreen.setOnClickListener(v -> {
+           mUnlockRelative.setVisibility(View.GONE);
+           mViewController.setVisibility(View.VISIBLE);
+           setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+       });
 
     }
 
@@ -98,30 +136,26 @@ public class PlayerActivity extends AppCompatActivity {
     public void onStart() {
         super.onStart();
         exoPlayerManager.OnStart();
-        initializeDoubleTapPlayerView();
-        mYouTubeOverlay.setPlayerView(mPlayerView);
-        mYouTubeOverlay.setPlayer(player);
+        mYouTubeOverlay.setPlayer(exoPlayerManager.getPlayer());
     }
 
     @Override
     public void onResume() {
         super.onResume();
         exoPlayerManager.onResume();
-        mYouTubeOverlay.setPlayer(player);
+        mYouTubeOverlay.setPlayer(exoPlayerManager.getPlayer());
     }
 
     @Override
     public void onPause() {
         super.onPause();
         exoPlayerManager.onPause();
-        mYouTubeOverlay.setPlayer(player);
     }
 
     @Override
     public void onStop() {
         super.onStop();
         exoPlayerManager.onStop();
-        mYouTubeOverlay.setPlayer(player);
     }
 
     private void requestFullScreenIfLandscape() {
@@ -131,68 +165,6 @@ public class PlayerActivity extends AppCompatActivity {
                 | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-    }
-
-
-    private class scaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
-        @Override
-        public boolean onScale(ScaleGestureDetector detector) {
-            mScaleVideo = mScaleVideo * detector.getScaleFactor();
-            if (mScaleVideo > 1f) {
-                mPlayerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
-                player.setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING);
-            } else
-                mPlayerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
-            return true;
-        }
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        mGestureDetector.onTouchEvent(event);
-        return true;
-    }
-
-    public void initializeDoubleTapPlayerView() {
-        mYouTubeOverlay.setPlayerView(mPlayerView);
-        mYouTubeOverlay.setAnimationDuration(800);
-        mYouTubeOverlay.setFastForwardRewindDuration(10000);
-        mYouTubeOverlay.setSeekListener(new SeekListener() {
-            @Override
-            public void onVideoStartReached() {
-                pausePlayer();
-                Log.d("VideoStart", "onVideoStartReached: " + "Video start reached");
-            }
-
-            @Override
-            public void onVideoEndReached() {
-                Log.d("VideoStop", "onVideoEndReached: " + "Video end reached");
-            }
-        });
-        mYouTubeOverlay.setPerformListener(new YouTubeOverlay.PerformListener() {
-            @Override
-            public void onAnimationStart() {
-                mPlayerView.setUseController(false);
-                mYouTubeOverlay.setVisibility(View.VISIBLE);
-            }
-
-            @Override
-            public void onAnimationEnd() {
-                mPlayerView.setUseController(true);
-                mYouTubeOverlay.setVisibility(View.GONE);
-                if (!player.getPlayWhenReady())
-                    mPlayerView.showController();
-            }
-        });
-
-        mPlayerView.activateDoubleTap(true).setDoubleTapDelay(650).setDoubleTapListener(mYouTubeOverlay);
-    }
-
-    private void pausePlayer() {
-        if (player != null) {
-            player.setPlayWhenReady(false);
-            player.getPlaybackState();
-        }
     }
 }
 
