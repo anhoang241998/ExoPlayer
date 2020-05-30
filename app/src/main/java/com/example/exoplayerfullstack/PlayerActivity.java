@@ -1,12 +1,13 @@
 package com.example.exoplayerfullstack;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
-import android.view.MotionEvent;
-import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -14,6 +15,7 @@ import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
@@ -21,17 +23,14 @@ import com.example.exoplayerfullstack.exoplayer.ExoPlayerManager;
 import com.github.rubensousa.previewseekbar.PreviewBar;
 import com.github.rubensousa.previewseekbar.exoplayer.PreviewTimeBar;
 import com.github.vkay94.dtpv.DoubleTapPlayerView;
-import com.github.vkay94.dtpv.SeekListener;
 import com.github.vkay94.dtpv.youtube.YouTubeOverlay;
-import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.ExoPlayerFactory;
-import com.google.android.exoplayer2.SimpleExoPlayer;
-import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
-import com.google.android.exoplayer2.ui.PlayerControlView;
+import com.lukelorusso.verticalseekbar.VerticalSeekBar;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import kotlin.Unit;
+import kotlin.jvm.functions.Function1;
 
 public class PlayerActivity extends AppCompatActivity {
 
@@ -51,6 +50,8 @@ public class PlayerActivity extends AppCompatActivity {
     private ConstraintLayout mViewController;
     private FrameLayout mViewGroupPlayPause;
     private boolean flag = false;
+    private VerticalSeekBar mVerticalSeekBar;
+    private int mBrightness;
 
 
     @Override
@@ -68,6 +69,11 @@ public class PlayerActivity extends AppCompatActivity {
         mUnlockRelative = mPlayerView.findViewById(R.id.viewGroup_unlock_screen);
         mViewController = mPlayerView.findViewById(R.id.viewGroup_controller);
         mViewGroupPlayPause = mPlayerView.findViewById(R.id.viewGroup_play_pause);
+
+        mVerticalSeekBar = mPlayerView.findViewById(R.id.verticalSeekBar);
+        mVerticalSeekBar.setMaxValue(255);
+        mBrightness = Settings.System.getInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, 0);
+        mVerticalSeekBar.setProgress(mBrightness);
 
 
         previewTimebar.addOnPreviewVisibilityListener((previewBar, isPreviewShowing) -> {
@@ -111,16 +117,30 @@ public class PlayerActivity extends AppCompatActivity {
         });
 
         mBtnLockScreen.setOnClickListener(v -> {
-           mViewController.setVisibility(View.GONE);
-           mUnlockRelative.setVisibility(View.VISIBLE);
-           setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            mViewController.setVisibility(View.GONE);
+            mUnlockRelative.setVisibility(View.VISIBLE);
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         });
 
-       mBtnUnlockScreen.setOnClickListener(v -> {
-           mUnlockRelative.setVisibility(View.GONE);
-           mViewController.setVisibility(View.VISIBLE);
-           setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-       });
+        mBtnUnlockScreen.setOnClickListener(v -> {
+            mUnlockRelative.setVisibility(View.GONE);
+            mViewController.setVisibility(View.VISIBLE);
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        });
+
+        mVerticalSeekBar.setOnProgressChangeListener(new Function1<Integer, Unit>() {
+            @RequiresApi(api = Build.VERSION_CODES.M)
+            @Override
+            public Unit invoke(Integer progressValue) {
+                Context context = getApplicationContext();
+                boolean canWrite = Settings.System.canWrite(context);
+                if (canWrite) {
+                    Settings.System.putInt(context.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+                    Settings.System.putInt(context.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, progressValue);
+                }
+                return null;
+            }
+        });
 
     }
 
